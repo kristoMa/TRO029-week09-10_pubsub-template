@@ -356,8 +356,8 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           
-          # Käivita publisher 3 sekundiks
-          timeout 3s ros2 run py_pubsub talker > pub.txt 2>&1 &
+          # Käivita publisher kuni kontrollide lõppemiseni
+          timeout 10s ros2 run py_pubsub talker > pub.txt 2>&1 &
           PUB_PID=$!
           
           sleep 1
@@ -365,13 +365,19 @@ jobs:
           if ps -p $PUB_PID > /dev/null 2>&1; then
             echo "✅ Publisher käivitus!"
             
-            sleep 1
-            
             # Kontrolli topic'ut
             if ros2 topic list 2>/dev/null | grep -q "/topic"; then
               echo "✅ Topic '/topic' eksisteerib"
-              
-              if TOPIC_TYPE=$(ros2 topic type /topic 2>/dev/null); then
+
+              TOPIC_TYPE=""
+              for attempt in 1 2 3 4 5; do
+                if TOPIC_TYPE=$(ros2 topic type /topic 2>/dev/null) && [ -n "$TOPIC_TYPE" ]; then
+                  break
+                fi
+                sleep 1
+              done
+
+              if [ -n "$TOPIC_TYPE" ]; then
                 echo "   Topic type: $TOPIC_TYPE"
 
                 if echo "$TOPIC_TYPE" | grep -q "std_msgs/msg/String"; then
