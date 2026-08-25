@@ -371,11 +371,22 @@ jobs:
             if ros2 topic list 2>/dev/null | grep -q "/topic"; then
               echo "✅ Topic '/topic' eksisteerib"
               
-              TOPIC_TYPE=$(ros2 topic type /topic 2>/dev/null)
-              echo "   Topic type: $TOPIC_TYPE"
-              
-              if echo "$TOPIC_TYPE" | grep -q "std_msgs/msg/String"; then
-                echo "✅ Korrektne message type"
+              if TOPIC_TYPE=$(ros2 topic type /topic 2>/dev/null); then
+                echo "   Topic type: $TOPIC_TYPE"
+
+                if echo "$TOPIC_TYPE" | grep -q "std_msgs/msg/String"; then
+                  echo "✅ Korrektne message type"
+                else
+                  echo "❌ VIGA: Vale message type"
+                  kill $PUB_PID 2>/dev/null || true
+                  echo "PUBLISHER_SUCCESS=false" >> $GITHUB_ENV
+                  exit 1
+                fi
+              else
+                echo "❌ VIGA: Topic type'i ei õnnestunud lugeda"
+                kill $PUB_PID 2>/dev/null || true
+                echo "PUBLISHER_SUCCESS=false" >> $GITHUB_ENV
+                exit 1
               fi
             else
               echo "❌ VIGA: Topic '/topic' ei leitud"
