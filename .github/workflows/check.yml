@@ -13,6 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: osrf/ros:humble-desktop
+    defaults:
+      run:
+        shell: /bin/bash --noprofile --norc -eo pipefail {0}
     
     steps:
       - name: 📥 Checkout repository
@@ -44,21 +47,21 @@ jobs:
           # Kontrolli workspace
           if [ -d "ros2_ws/src" ]; then
             echo "✅ Workspace 'ros2_ws/src' olemas"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Workspace 'ros2_ws/src' puudub"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           # Kontrolli paketi kausta
           if [ -d "$PKG_PATH" ]; then
             echo "✅ Pakett '$PKG_NAME' olemas"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Pakett '$PKG_NAME' puudub"
             echo "   📍 Oodatud asukoht: $PKG_PATH"
             echo "   💡 Loo see: ros2 pkg create --build-type ament_python --license Apache-2.0 $PKG_NAME"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
             echo "STRUCTURE_ERRORS=$ERRORS" >> $GITHUB_ENV
             exit 1
           fi
@@ -66,28 +69,28 @@ jobs:
           # Kontrolli package.xml
           if [ -f "$PKG_PATH/package.xml" ]; then
             echo "✅ Fail 'package.xml' olemas"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: 'package.xml' puudub"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           # Kontrolli setup.py
           if [ -f "$PKG_PATH/setup.py" ]; then
             echo "✅ Fail 'setup.py' olemas"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: 'setup.py' puudub"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           # Kontrolli Python paketi kausta
           if [ -d "$PKG_PATH/$PKG_NAME" ]; then
             echo "✅ Python paketi kaust olemas: $PKG_NAME/$PKG_NAME/"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Python paketi kaust puudub"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           echo ""
@@ -119,12 +122,12 @@ jobs:
           PUB_FILE="$PKG_PATH/publisher_member_function.py"
           if [ -f "$PUB_FILE" ]; then
             echo "✅ Publisher fail olemas: publisher_member_function.py"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
             
             # Kontrolli kas fail sisaldab MinimalPublisher klassi
             if grep -q "class MinimalPublisher" "$PUB_FILE"; then
               echo "   ✓ Sisaldab MinimalPublisher klassi"
-              ((SUCCESS++))
+              SUCCESS=$((SUCCESS+1))
             else
               echo "   ⚠️ HOIATUS: Ei leia MinimalPublisher klassi"
             fi
@@ -132,16 +135,16 @@ jobs:
             # Kontrolli kas on main funktsioon
             if grep -q "def main" "$PUB_FILE"; then
               echo "   ✓ Sisaldab main() funktsiooni"
-              ((SUCCESS++))
+              SUCCESS=$((SUCCESS+1))
             else
               echo "   ❌ VIGA: Puudub main() funktsioon"
-              ((ERRORS++))
+              ERRORS=$((ERRORS+1))
             fi
           else
             echo "❌ VIGA: Publisher fail puudub: publisher_member_function.py"
             echo "   📍 Oodatud asukoht: $PUB_FILE"
             echo "   💡 Laadi alla näitefail wget käsuga (vaata README)"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           echo ""
@@ -150,12 +153,12 @@ jobs:
           SUB_FILE="$PKG_PATH/subscriber_member_function.py"
           if [ -f "$SUB_FILE" ]; then
             echo "✅ Subscriber fail olemas: subscriber_member_function.py"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
             
             # Kontrolli kas fail sisaldab MinimalSubscriber klassi
             if grep -q "class MinimalSubscriber" "$SUB_FILE"; then
               echo "   ✓ Sisaldab MinimalSubscriber klassi"
-              ((SUCCESS++))
+              SUCCESS=$((SUCCESS+1))
             else
               echo "   ⚠️ HOIATUS: Ei leia MinimalSubscriber klassi"
             fi
@@ -163,16 +166,16 @@ jobs:
             # Kontrolli kas on main funktsioon
             if grep -q "def main" "$SUB_FILE"; then
               echo "   ✓ Sisaldab main() funktsiooni"
-              ((SUCCESS++))
+              SUCCESS=$((SUCCESS+1))
             else
               echo "   ❌ VIGA: Puudub main() funktsioon"
-              ((ERRORS++))
+              ERRORS=$((ERRORS+1))
             fi
           else
             echo "❌ VIGA: Subscriber fail puudub: subscriber_member_function.py"
             echo "   📍 Oodatud asukoht: $SUB_FILE"
             echo "   💡 Laadi alla näitefail wget käsuga (vaata README)"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           echo ""
@@ -203,7 +206,7 @@ jobs:
           
           if [ ! -f "$PACKAGE_XML" ]; then
             echo "❌ VIGA: package.xml puudub"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
             echo "DEPENDENCIES_ERRORS=$ERRORS" >> $GITHUB_ENV
             exit 1
           fi
@@ -212,22 +215,22 @@ jobs:
           if grep -q "<exec_depend>rclpy</exec_depend>" "$PACKAGE_XML" || \
              grep -q "<depend>rclpy</depend>" "$PACKAGE_XML"; then
             echo "✅ Sõltuvus 'rclpy' deklareeritud"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Sõltuvus 'rclpy' puudub"
             echo "   💡 Lisa: <exec_depend>rclpy</exec_depend>"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           # Kontrolli std_msgs
           if grep -q "<exec_depend>std_msgs</exec_depend>" "$PACKAGE_XML" || \
              grep -q "<depend>std_msgs</depend>" "$PACKAGE_XML"; then
             echo "✅ Sõltuvus 'std_msgs' deklareeritud"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Sõltuvus 'std_msgs' puudub"
             echo "   💡 Lisa: <exec_depend>std_msgs</exec_depend>"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           # Kontrolli metaandmeid
@@ -237,19 +240,19 @@ jobs:
           if grep -q "<description>.*TODO.*</description>" "$PACKAGE_XML" || \
              grep -q "<description></description>" "$PACKAGE_XML"; then
             echo "⚠️ HOIATUS: Description täitmata või sisaldab 'TODO'"
-            ((WARNINGS++))
+            WARNINGS=$((WARNINGS+1))
           else
             echo "✅ Description täidetud"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           fi
           
           if grep -q 'maintainer email=".*TODO.*"' "$PACKAGE_XML" || \
              grep -q 'maintainer email="">.*</maintainer>' "$PACKAGE_XML"; then
             echo "⚠️ HOIATUS: Maintainer email täitmata"
-            ((WARNINGS++))
+            WARNINGS=$((WARNINGS+1))
           else
             echo "✅ Maintainer email täidetud"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           fi
           
           echo ""
@@ -279,7 +282,7 @@ jobs:
           
           if [ ! -f "$SETUP_PY" ]; then
             echo "❌ VIGA: setup.py puudub"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
             echo "ENTRY_POINTS_ERRORS=$ERRORS" >> $GITHUB_ENV
             exit 1
           fi
@@ -287,21 +290,21 @@ jobs:
           # Kontrolli talker
           if grep -q "talker.*=.*py_pubsub.publisher_member_function:main" "$SETUP_PY"; then
             echo "✅ Entry point 'talker' korrektne"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Entry point 'talker' puudub või vale"
             echo "   💡 Lisa: 'talker = py_pubsub.publisher_member_function:main',"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           # Kontrolli listener
           if grep -q "listener.*=.*py_pubsub.subscriber_member_function:main" "$SETUP_PY"; then
             echo "✅ Entry point 'listener' korrektne"
-            ((SUCCESS++))
+            SUCCESS=$((SUCCESS+1))
           else
             echo "❌ VIGA: Entry point 'listener' puudub või vale"
             echo "   💡 Lisa: 'listener = py_pubsub.subscriber_member_function:main',"
-            ((ERRORS++))
+            ERRORS=$((ERRORS+1))
           fi
           
           echo ""
